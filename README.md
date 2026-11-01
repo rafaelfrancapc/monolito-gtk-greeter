@@ -63,3 +63,82 @@ This fork adds a Fluent-inspired login layout, external GTK CSS, successful-logi
 identity caching (including non-enumerated AD users), and an explicit Other user
 action. See [the refactoring map, configuration and test guide](docs/fluent-greeter.md)
 for deployment settings and the precise scope of `suppress-session-warnings`.
+
+## Compiling
+
+No Linux Mint XFCE, instale as dependências:
+
+```bash
+sudo apt update
+sudo apt install -y \
+  build-essential autoconf automake libtool autopoint gettext \
+  git2cl gobject-introspection intltool \
+  libgtk-3-dev liblightdm-gobject-1-dev libx11-dev \
+  pkg-config xfce4-dev-tools \
+  libayatana-indicator3-dev libayatana-ido3-dev \
+  python3 xvfb xauth xdotool dbus-x11 \
+  adwaita-icon-theme librsvg2-common
+```
+
+Clone sua branch e compile:
+
+```bash
+git clone --branch work https://github.com/rafaelfrancapc/monolito-gtk-greeter.git
+cd monolito-gtk-greeter
+
+NOCONFIGURE=1 ./autogen.sh
+mkdir build
+cd build
+../configure --prefix=/usr --sysconfdir=/etc --with-libindicator=ayatana
+make -j"$(nproc)"
+make check
+```
+
+Para validar o pacote completo:
+
+```bash
+make distcheck DISTCHECK_CONFIGURE_FLAGS="--with-libindicator=ayatana"
+```
+
+O binário compilado estará em:
+
+```bash
+build/src/lightdm-gtk-greeter
+```
+
+Para instalar localmente após testar:
+
+```bash
+sudo make install
+sudo install -Dm644 ../data/gtk.css /etc/lightdm/gtk.css
+```
+
+Use esta configuração em `/etc/lightdm/lightdm-gtk-greeter.conf`:
+
+```ini
+[greeter]
+background=/usr/share/backgrounds/seu-fundo.jpg
+user-background=false
+css-file=/etc/lightdm/gtk.css
+remember-last-user=true
+suppress-session-warnings=false
+clock-format=%H:%M
+date-format=%A, %e %B
+position=50% 60%
+panel-position=bottom
+```
+
+Antes de trocar o greeter em uso, mantenha uma sessão de terminal aberta. Em Mint XFCE, confirme o arquivo de configuração do LightDM, normalmente em `/etc/lightdm/lightdm.conf` ou `/etc/lightdm/lightdm.conf.d/`, e ajuste:
+
+```ini
+[Seat:*]
+greeter-session=lightdm-gtk-greeter
+```
+
+Depois reinicie o display manager:
+
+```bash
+sudo systemctl restart lightdm
+```
+
+Isso encerra sua sessão gráfica atual.
