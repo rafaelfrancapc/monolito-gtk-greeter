@@ -187,7 +187,8 @@ sudo apt install ./lightdm-gtk-greeter_2.0.9+monolito2-1_amd64.deb
 Compilador, headers, Autotools, Xvfb e Python permanecem somente na máquina de
 build; o dpkg calcula automaticamente as bibliotecas de execução necessárias.
 Para publicar sem preparar uma máquina de build, o workflow “Build Debian
-package” compila em Ubuntu 22.04 e disponibiliza o `.deb` como artifact. Depois
+package” compila em Ubuntu 22.04 e disponibiliza o `.deb` como artifact. Uma
+tag `v*` também cria uma GitHub Release com o pacote e seu `SHA256SUMS`. Depois
 de o workflow estar na branch padrão, abra **Actions → Build Debian package →
 Run workflow**. Para uma nova versão, atualize `debian/changelog`; nunca reutilize
 o mesmo número de versão para conteúdo diferente.

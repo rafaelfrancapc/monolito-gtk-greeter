@@ -7,7 +7,7 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-deb:
@@ -31,8 +31,19 @@ jobs:
         run: |
           mkdir -p artifacts
           cp ../lightdm-gtk-greeter_*_*.deb artifacts/
+          cd artifacts
+          sha256sum *.deb > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: lightdm-gtk-greeter-deb
-          path: artifacts/*.deb
+          path: artifacts/*
           if-no-files-found: error
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" artifacts/*.deb artifacts/SHA256SUMS \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Monolito GTK Greeter $GITHUB_REF_NAME" \
+            --notes "Pacote amd64 compilado no Ubuntu 22.04 para Linux Mint 21/22. Inclui o perfil do último usuário com autenticação somente por senha e a opção Outro usuário para credenciais manuais."
