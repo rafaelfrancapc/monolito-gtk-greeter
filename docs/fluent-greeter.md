@@ -43,9 +43,13 @@ remember-last-user=true
 suppress-session-warnings=false
 clock-format=%H:%M
 date-format=%A, %e %B
-position=50% 60%
+position=50%,center 60%,center
 panel-position=bottom
 ```
+
+Os sufixos `,center` são necessários: valores percentuais sem âncora posicionam
+a borda superior esquerda do formulário naquele ponto e deslocam o conteúdo
+para baixo e para a direita, especialmente perceptível em 1280×800.
 
 Copie `data/gtk.css` para `/etc/lightdm/gtk.css`, mantenha-o legível pelo usuário
 do greeter e reinicie a sessão do greeter para aplicar alterações. CSS inválido

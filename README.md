@@ -124,7 +124,7 @@ remember-last-user=true
 suppress-session-warnings=false
 clock-format=%H:%M
 date-format=%A, %e %B
-position=50% 60%
+position=50%,center 60%,center
 panel-position=bottom
 ```
 

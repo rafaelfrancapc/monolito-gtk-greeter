@@ -7,6 +7,8 @@
 @define-color greeter_input rgba(28, 32, 40, 0.88);
 @define-color greeter_hover rgba(255, 255, 255, 0.14);
 @define-color greeter_error #ffb4ab;
+@define-color greeter_surface rgba(18, 22, 29, 0.58);
+@define-color greeter_surface_soft rgba(18, 22, 29, 0.42);
 
 #screen, #login_window, #identity_switcher, #desktop_clock {
     color: @greeter_fg;
@@ -16,10 +18,19 @@
     box-shadow: none;
 }
 #login_box { padding: 8px; }
-#user_image_border, #user_image_border > border {
-    border: none;
+#user_image_border {
     background: transparent;
+    border: none;
     box-shadow: none;
+}
+#user_image_border > border {
+    min-width: 112px;
+    min-height: 112px;
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    background: @greeter_surface;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 #identity_label { font-size: 1.65em; font-weight: 600; margin: 4px 0 8px; }
 #desktop_time { font-size: 6.5em; font-weight: 600; letter-spacing: -3px; }
@@ -71,11 +82,18 @@
 }
 #greeter_infobar.error { color: @greeter_error; }
 #message_label { font-size: 0.9em; padding: 4px 0; }
+#identity_switcher {
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    background: @greeter_surface-soft;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
 #cancel_button, #other_user_button, #user_combobox button {
     color: @greeter_fg;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.08);
     background-image: none;
-    border: 1px solid transparent;
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 8px;
     box-shadow: none;
     text-shadow: none;
