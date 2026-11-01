@@ -117,7 +117,7 @@ Use esta configuração em `/etc/lightdm/lightdm-gtk-greeter.conf`:
 
 ```ini
 [greeter]
-background=/usr/share/backgrounds/seu-fundo.jpg
+background=/usr/share/backgrounds/linuxmint-wallpapers/jpanchal_curves.jpg
 user-background=false
 css-file=/etc/lightdm/gtk.css
 remember-last-user=true
