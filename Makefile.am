@@ -19,7 +19,13 @@ EXTRA_DIST = \
 	lightdm-gtk-greeter.doap \
 	tests/run-smoke.sh \
 	tests/greeter-smoke.py \
-	docs/fluent-greeter.md
+	docs/fluent-greeter.md \
+	debian/changelog \
+	debian/control \
+	debian/copyright \
+	debian/README.Debian \
+	debian/rules \
+	debian/source/format
 
 TESTS = tests/run-smoke.sh
 TESTS_ENVIRONMENT = GREETER_TEST_BINARY="$(abs_builddir)/src/lightdm-gtk-greeter"

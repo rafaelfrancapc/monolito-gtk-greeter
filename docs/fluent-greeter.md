@@ -10,7 +10,7 @@ Python é usado apenas na automação de teste.
 | --- | --- | --- |
 | Painel de login | `src/lightdm-gtk-greeter.glade`, `main()` | Formulário sem cartão, avatar de 112 px, identidade, credenciais e botão de seta; posição proporcional ao monitor ativo |
 | Relógio | `clock_timeout_thread()` | Relógio superior independente dos indicadores, data localizada e atualização somente quando o texto muda |
-| Troca de identidade | `load_user_list()`, `set_displayed_user()`, `other_user_clicked_cb()` | Seletor inferior esquerdo e ação explícita Outro usuário (Alt+O no idioma inglês); conta AD anterior permanece selecionável mesmo sem enumeração |
+| Troca de identidade | `load_user_list()`, `set_displayed_user()`, `other_user_clicked_cb()` | Seletor inferior esquerdo com somente a última identidade válida e a ação Outro usuário; enumeração completa é opt-in |
 | Autenticação | `start_authentication()`, `process_prompts()`, `authentication_complete_cb()` | Mantém o protocolo LightDM/PAM, limpa senha ao alternar identidade, mostra desafios e erros inline |
 | Persistência | `start_session()`, `greeterconfiguration.c` | Grava a identidade apenas após LightDM aceitar o início da sessão, nunca ao selecionar usuário ou após tentativa malsucedida |
 | Sessão e energia | `set_session()`, indicadores existentes | Reutiliza sessões instaladas e permissões LightDM; controles no canto inferior direito, F9–F12 e confirmação de desligamento preservados |
@@ -40,6 +40,7 @@ css-file=/etc/lightdm/gtk.css
 background=/usr/share/backgrounds/empresa.jpg
 user-background=false
 remember-last-user=true
+show-user-list=false
 suppress-session-warnings=false
 clock-format=%H:%M
 date-format=%A, %e %B
@@ -68,6 +69,11 @@ novas gravações de identidade. Não apaga um cache anterior; para remover dado
 preexistentes, remova `last-user` desse arquivo com o greeter parado.
 `greeter-hide-users=true` na configuração do LightDM prevalece: nenhuma conta
 anterior é restaurada ou gravada enquanto essa política estiver ativa.
+Por padrão, `show-user-list=false` impede que contas locais ou do AD enumeradas
+pelo AccountsService sejam acumuladas no seletor. O greeter mostra apenas a
+identidade do último início de sessão bem-sucedido — ou o usuário indicado pelo
+LightDM ao desbloquear — e “Outro usuário”. Use `show-user-list=true` somente em
+instalações que realmente precisem da lista completa de contas e da sessão guest.
 
 ## Active Directory e confirmação de sessão
 
@@ -121,10 +127,64 @@ salva capturas do processo GTK para inspeção.
 A validação cobre cache de usuário AD não enumerado, erro e nova tentativa,
 alternância para Outro usuário, preservação exata do UPN, início de sessão,
 confirmação opt-in, desafios PAM/MFA, erros RC4, política de usuários ocultos e
-falha de sessão. O teste de erro também verifica pixels da cor de erro, evitando
-aceitar texto ilegível sobre o fundo.
+falha de sessão. Capturas opcionais permitem revisar as cores e o layout sem
+transformar diferenças de fonte e antialiasing entre distribuições em falhas.
 
 A implantação ainda deve validar login/logout, avatar do diretório, MFA,
 expiração de senha e múltiplos monitores com o LightDM e o domínio da empresa.
 Os testes de protocolo não substituem essas verificações nem constituem medição
 de consumo de memória ou latência no hardware final.
+
+## Pacote Debian para Linux Mint
+
+O diretório `debian/` gera um pacote binário chamado `lightdm-gtk-greeter`, com
+versão maior que a do repositório da distribuição. Ele atualiza o pacote padrão
+em vez de instalar dois binários concorrentes. Configurações modificadas em
+`/etc/lightdm/lightdm-gtk-greeter.conf` continuam protegidas pelo mecanismo de
+conffiles do dpkg.
+
+Construa o pacote na versão mais antiga do Ubuntu/Mint que pretende suportar.
+Um `.deb` criado no Ubuntu 22.04 ou Mint 21 é adequado para Mint 21 e versões
+posteriores da mesma arquitetura; o caminho inverso pode falhar por depender de
+uma glibc mais nova. O pacote é específico por arquitetura (`amd64`, `arm64`,
+etc.), embora o mesmo código-fonte gere todas elas.
+
+Na máquina usada para build:
+
+```sh
+sudo apt update
+sudo apt install build-essential devscripts debhelper
+sudo apt build-dep .
+dpkg-buildpackage -us -uc -b
+```
+
+Caso `apt build-dep .` informe que não há entradas `deb-src`, instale as
+dependências declaradas em `debian/control` com:
+
+```sh
+sudo apt install build-essential devscripts debhelper-compat dh-autoreconf autoconf automake \
+  autopoint gettext git2cl gobject-introspection intltool libgtk-3-dev \
+  liblightdm-gobject-1-dev libx11-dev libtool pkg-config xfce4-dev-tools \
+  libayatana-indicator3-dev libayatana-ido3-dev python3 xvfb xauth xdotool \
+  dbus-x11 adwaita-icon-theme librsvg2-common
+```
+
+O resultado fica no diretório pai, por exemplo:
+
+```text
+../lightdm-gtk-greeter_2.0.9+monolito1-1_amd64.deb
+```
+
+Copie apenas esse arquivo para cada máquina compatível e instale:
+
+```sh
+sudo apt install ./lightdm-gtk-greeter_2.0.9+monolito1-1_amd64.deb
+```
+
+Compilador, headers, Autotools, Xvfb e Python permanecem somente na máquina de
+build; o dpkg calcula automaticamente as bibliotecas de execução necessárias.
+Para publicar sem preparar uma máquina de build, o workflow “Build Debian
+package” compila em Ubuntu 22.04 e disponibiliza o `.deb` como artifact. Depois
+de o workflow estar na branch padrão, abra **Actions → Build Debian package →
+Run workflow**. Para uma nova versão, atualize `debian/changelog`; nunca reutilize
+o mesmo número de versão para conteúdo diferente.

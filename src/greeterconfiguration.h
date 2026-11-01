@@ -39,6 +39,7 @@
 #define CONFIG_KEY_DATE_FORMAT          "date-format"
 #define CONFIG_KEY_CSS_FILE             "css-file"
 #define CONFIG_KEY_REMEMBER_LAST_USER   "remember-last-user"
+#define CONFIG_KEY_SHOW_USER_LIST       "show-user-list"
 #define CONFIG_KEY_SUPPRESS_SESSION_WARNINGS "suppress-session-warnings"
 #define CONFIG_KEY_ACTIVE_MONITOR       "active-monitor"
 #define CONFIG_KEY_POSITION             "position"

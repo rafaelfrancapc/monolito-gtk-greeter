@@ -121,6 +121,7 @@ background=/usr/share/backgrounds/linuxmint-wallpapers/jpanchal_curves.jpg
 user-background=false
 css-file=/etc/lightdm/gtk.css
 remember-last-user=true
+show-user-list=false
 suppress-session-warnings=false
 clock-format=%H:%M
 date-format=%A, %e %B
@@ -142,3 +143,23 @@ sudo systemctl restart lightdm
 ```
 
 Isso encerra sua sessão gráfica atual.
+
+### Pacote Debian
+
+Para gerar um pacote instalável sem ferramentas de compilação nas máquinas de
+destino, instale as dependências apenas na máquina de build e execute:
+
+```bash
+sudo apt install build-essential devscripts debhelper
+sudo apt build-dep .
+dpkg-buildpackage -us -uc -b
+```
+
+O `.deb` será criado no diretório pai. Nas máquinas Mint de destino basta:
+
+```bash
+sudo apt install ../lightdm-gtk-greeter_2.0.9+monolito1-1_amd64.deb
+```
+
+Veja [docs/fluent-greeter.md](docs/fluent-greeter.md) para compatibilidade,
+publicação pelo GitHub Actions e atualização do pacote.

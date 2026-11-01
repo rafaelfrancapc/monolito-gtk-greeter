@@ -1,0 +1,13 @@
+monolito-gtk-greeter for Debian and Linux Mint
+==============================================
+
+This package intentionally uses the binary package name lightdm-gtk-greeter so
+that it upgrades the distribution package and owns the same greeter executable.
+
+The configuration in /etc/lightdm/lightdm-gtk-greeter.conf is a dpkg conffile.
+Local administrator changes are preserved across upgrades. Review any dpkg
+prompt about that file instead of replacing it blindly.
+
+The package does not join the host to Active Directory or configure PAM, SSSD,
+winbind or Kerberos. Complete that system integration separately before testing
+manual UPN or DOMAIN\\user login.

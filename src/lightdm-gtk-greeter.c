@@ -2768,24 +2768,46 @@ authentication_complete_cb (LightDMGreeter *ldm)
 }
 
 static void
-user_added_cb (LightDMUserList *user_list, LightDMUser *user, LightDMGreeter *ldm)
+add_user_to_model (const gchar *username, gboolean prepend)
 {
     GtkTreeModel *model;
     GtkTreeIter iter;
-    gboolean logged_in = FALSE;
+    LightDMUser *user = NULL;
+    const gchar *label;
+    gboolean logged_in;
 
+    if (!username || !username[0])
+        return;
     model = gtk_combo_box_get_model (user_combo);
+    if (!get_user_iter (username, &iter))
+    {
+        if (prepend)
+            gtk_list_store_prepend (GTK_LIST_STORE (model), &iter);
+        else
+            gtk_list_store_append (GTK_LIST_STORE (model), &iter);
+    }
 
-    logged_in = lightdm_user_get_logged_in (user);
-
-    /* AccountsService may enumerate a cached domain identity later. */
-    if (!get_user_iter (lightdm_user_get_name (user), &iter))
-        gtk_list_store_append (GTK_LIST_STORE (model), &iter);
+    if (g_strcmp0 (username, "*other") == 0)
+        label = _("Other user");
+    else if (g_strcmp0 (username, "*guest") == 0)
+        label = _("Guest Session");
+    else
+    {
+        user = lightdm_user_list_get_user_by_name (lightdm_user_list_get_instance (), username);
+        label = user ? lightdm_user_get_display_name (user) : username;
+    }
+    logged_in = user && lightdm_user_get_logged_in (user);
     gtk_list_store_set (GTK_LIST_STORE (model), &iter,
-                        0, lightdm_user_get_name (user),
-                        1, lightdm_user_get_display_name (user),
+                        0, username,
+                        1, label,
                         2, logged_in ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL,
                         -1);
+}
+
+static void
+user_added_cb (LightDMUserList *user_list, LightDMUser *user, LightDMGreeter *ldm)
+{
+    add_user_to_model (lightdm_user_get_name (user), FALSE);
 }
 
 static gboolean
@@ -2856,52 +2878,11 @@ load_user_list (void)
 
     const gchar  *selected_user;
     gchar        *last_user;
-    gboolean      logged_in = FALSE;
+    gboolean      show_user_list;
 
-    g_signal_connect (lightdm_user_list_get_instance (), "user-added", G_CALLBACK (user_added_cb), greeter);
-    g_signal_connect (lightdm_user_list_get_instance (), "user-changed", G_CALLBACK (user_changed_cb), greeter);
-    g_signal_connect (lightdm_user_list_get_instance (), "user-removed", G_CALLBACK (user_removed_cb), NULL);
     model = gtk_combo_box_get_model (user_combo);
-    items = lightdm_user_list_get_users (lightdm_user_list_get_instance ());
-    for (item = items; item; item = item->next)
-    {
-        LightDMUser *user = item->data;
-        logged_in = lightdm_user_get_logged_in (user);
-
-        gtk_list_store_append (GTK_LIST_STORE (model), &iter);
-        gtk_list_store_set (GTK_LIST_STORE (model), &iter,
-                            0, lightdm_user_get_name (user),
-                            1, lightdm_user_get_display_name (user),
-                            2, logged_in ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL,
-                            -1);
-    }
-    if (lightdm_greeter_get_has_guest_account_hint (greeter))
-    {
-        gtk_list_store_append (GTK_LIST_STORE (model), &iter);
-        gtk_list_store_set (GTK_LIST_STORE (model), &iter,
-                            0, "*guest",
-                            1, _("Guest Session"),
-                            2, PANGO_WEIGHT_NORMAL,
-                            -1);
-    }
-
-    gtk_list_store_append (GTK_LIST_STORE (model), &iter);
-    gtk_list_store_set (GTK_LIST_STORE (model), &iter,
-                        0, "*other",
-                        1, _("Other user"),
-                        2, PANGO_WEIGHT_NORMAL,
-                        -1);
-
     last_user = config_get_bool (NULL, CONFIG_KEY_REMEMBER_LAST_USER, TRUE) ?
                 config_get_string (STATE_SECTION_GREETER, STATE_KEY_LAST_USER, NULL) : NULL;
-    /* SSSD/AD accounts need not be enumerated by AccountsService. Keep their
-     * successful login selectable without looking up or rewriting the UPN. */
-    if (last_user && last_user[0] && last_user[0] != '*' && !get_user_iter (last_user, &iter))
-    {
-        gtk_list_store_prepend (GTK_LIST_STORE (model), &iter);
-        gtk_list_store_set (GTK_LIST_STORE (model), &iter,
-                            0, last_user, 1, last_user, 2, PANGO_WEIGHT_NORMAL, -1);
-    }
     if (last_user && (!last_user[0] || last_user[0] == '*'))
         g_clear_pointer (&last_user, g_free);
 
@@ -2913,6 +2894,28 @@ load_user_list (void)
         selected_user = last_user;
     else
         selected_user = NULL;
+
+    show_user_list = config_get_bool (NULL, CONFIG_KEY_SHOW_USER_LIST, FALSE);
+    if (show_user_list)
+    {
+        g_signal_connect (lightdm_user_list_get_instance (), "user-added", G_CALLBACK (user_added_cb), greeter);
+        g_signal_connect (lightdm_user_list_get_instance (), "user-changed", G_CALLBACK (user_changed_cb), greeter);
+        g_signal_connect (lightdm_user_list_get_instance (), "user-removed", G_CALLBACK (user_removed_cb), NULL);
+        items = lightdm_user_list_get_users (lightdm_user_list_get_instance ());
+        for (item = items; item; item = item->next)
+            add_user_to_model (lightdm_user_get_name (item->data), FALSE);
+        if (lightdm_greeter_get_has_guest_account_hint (greeter))
+            add_user_to_model ("*guest", FALSE);
+        /* SSSD/AD identities may be absent from AccountsService enumeration. */
+        if (selected_user && selected_user[0] != '*')
+            add_user_to_model (selected_user, TRUE);
+    }
+    else if (selected_user && selected_user[0] != '*')
+    {
+        /* Corporate mode: expose one remembered or lock-screen identity only. */
+        add_user_to_model (selected_user, FALSE);
+    }
+    add_user_to_model ("*other", FALSE);
 
     if (gtk_tree_model_get_iter_first (model, &iter))
     {
