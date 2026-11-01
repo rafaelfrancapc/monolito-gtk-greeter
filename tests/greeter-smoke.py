@@ -167,6 +167,15 @@ class Greeter:
         parser.read(self.state)
         return parser['greeter']['last-user']
 
+    def wait_for_cached(self, username, timeout=3):
+        """Wait for the GTK main loop to return from start_session_sync()."""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if self.cached() == username:
+                return
+            time.sleep(0.05)
+        raise AssertionError(f'Expected cached user {username!r}, got {self.cached()!r}')
+
     def session(self, success=True):
         kind, _ = self.recv()
         while kind == 6:
@@ -231,7 +240,7 @@ class Smoke(unittest.TestCase):
         self.assertEqual(app.response(), 'test-password')
         app.end()
         app.session()
-        self.assertEqual(app.cached(), 'Another.User@EXAMPLE.test')
+        app.wait_for_cached('Another.User@EXAMPLE.test')
         self.assertNotIn('test-password', app.state.read_text())
 
     def test_no_prompt_requires_click_by_default(self):
@@ -246,7 +255,7 @@ class Smoke(unittest.TestCase):
         app = self.launch(suppress=True)
         app.end()
         app.session()
-        self.assertEqual(app.cached(), 'Rafael@example.test')
+        app.wait_for_cached('Rafael@example.test')
 
     def test_warning_flag_preserves_mfa_and_errors(self):
         app = self.launch(suppress=True)
