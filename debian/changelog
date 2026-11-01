@@ -1,3 +1,11 @@
+monolito-gtk-greeter (2.0.9+monolito2-1) stable; urgency=medium
+
+  * Keep the last successful identity as a password-only profile.
+  * Keep Other user as an independent manual username and password profile.
+  * Prevent hide-users from discarding the greeter's single remembered profile.
+
+ -- Rafael França <francarafaelpc@users.noreply.github.com>  Sun, 01 Nov 2026 23:30:00 -0300
+
 monolito-gtk-greeter (2.0.9+monolito1-1) stable; urgency=medium
 
   * Add a Fluent-inspired corporate LightDM login layout.

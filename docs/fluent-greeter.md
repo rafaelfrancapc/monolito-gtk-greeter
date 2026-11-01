@@ -67,8 +67,11 @@ somente a identidade e a sessão; nenhuma senha, token ou resposta PAM. A foto
 enumeradas usam o avatar padrão. `remember-last-user=false` impede leitura e
 novas gravações de identidade. Não apaga um cache anterior; para remover dados
 preexistentes, remova `last-user` desse arquivo com o greeter parado.
-`greeter-hide-users=true` na configuração do LightDM prevalece: nenhuma conta
-anterior é restaurada ou gravada enquanto essa política estiver ativa.
+`greeter-hide-users=true` continua impedindo a enumeração de contas, mas não
+descarta a identidade gravada por este greeter. Com `remember-last-user=true`,
+ela aparece como o único perfil nominal, com apenas a senha; “Outro usuário”
+mantém usuário e senha livres. Use `remember-last-user=false` quando a política
+local exigir que até a última identidade permaneça oculta.
 Por padrão, `show-user-list=false` impede que contas locais ou do AD enumeradas
 pelo AccountsService sejam acumuladas no seletor. O greeter mostra apenas a
 identidade do último início de sessão bem-sucedido — ou o usuário indicado pelo
@@ -172,13 +175,13 @@ sudo apt install build-essential devscripts debhelper-compat dh-autoreconf autoc
 O resultado fica no diretório pai, por exemplo:
 
 ```text
-../lightdm-gtk-greeter_2.0.9+monolito1-1_amd64.deb
+../lightdm-gtk-greeter_2.0.9+monolito2-1_amd64.deb
 ```
 
 Copie apenas esse arquivo para cada máquina compatível e instale:
 
 ```sh
-sudo apt install ./lightdm-gtk-greeter_2.0.9+monolito1-1_amd64.deb
+sudo apt install ./lightdm-gtk-greeter_2.0.9+monolito2-1_amd64.deb
 ```
 
 Compilador, headers, Autotools, Xvfb e Python permanecem somente na máquina de

@@ -270,13 +270,25 @@ class Smoke(unittest.TestCase):
         app.quiet()
         capture('pam-error-and-question')
 
-    def test_hidden_users_do_not_restore_or_write_cache(self):
+    def test_hidden_users_keep_only_remembered_and_manual_profiles(self):
         app = self.launch(suppress=True, hidden=True)
+        self.assertEqual(app.user, 'Rafael@example.test')
+        app.prompt((1, 'Password:'))
+        app.key('alt+o')
+        app.seq, app.user = app.auth()
         self.assertEqual(app.user, '')
-        app.user = 'Private.User@example.test'
+        app.prompt((2, 'Username:'))
+        app.type('Private.User@example.test')
+        app.key('Tab')
+        app.seq, app.user = app.auth()
+        self.assertEqual(app.user, 'Private.User@example.test')
+        app.prompt((1, 'Password:'))
+        app.type('test-password')
+        app.key('Return')
+        self.assertEqual(app.response(), 'test-password')
         app.end()
         app.session()
-        self.assertEqual(app.cached(), 'Rafael@example.test')
+        app.wait_for_cached('Private.User@example.test')
 
     def test_remember_disabled_does_not_restore(self):
         app = self.launch(suppress=True, remember=False)

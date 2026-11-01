@@ -121,6 +121,7 @@ background=/usr/share/backgrounds/linuxmint-wallpapers/jpanchal_curves.jpg
 user-background=false
 css-file=/etc/lightdm/gtk.css
 remember-last-user=true
+# Mesmo com greeter-hide-users=true, exibe somente este último perfil e Outro usuário.
 show-user-list=false
 suppress-session-warnings=false
 clock-format=%H:%M
@@ -158,7 +159,7 @@ dpkg-buildpackage -us -uc -b
 O `.deb` será criado no diretório pai. Nas máquinas Mint de destino basta:
 
 ```bash
-sudo apt install ../lightdm-gtk-greeter_2.0.9+monolito1-1_amd64.deb
+sudo apt install ../lightdm-gtk-greeter_2.0.9+monolito2-1_amd64.deb
 ```
 
 Veja [docs/fluent-greeter.md](docs/fluent-greeter.md) para compatibilidade,

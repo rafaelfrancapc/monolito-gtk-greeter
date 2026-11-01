@@ -2304,7 +2304,7 @@ cancel_authentication (void)
     }
 
     /* Start a new login or return to the user list */
-    if (other || lightdm_greeter_get_hide_users_hint (greeter))
+    if (other)
         start_authentication ("*other");
     else
         gtk_widget_grab_focus (GTK_WIDGET (user_combo));
@@ -2340,7 +2340,6 @@ start_session (void)
         if (session)
             config_set_string (STATE_SECTION_GREETER, STATE_KEY_LAST_SESSION, session);
         if (config_get_bool (NULL, CONFIG_KEY_REMEMBER_LAST_USER, TRUE) &&
-            !lightdm_greeter_get_hide_users_hint (greeter) &&
             username && username[0] && username[0] != '*')
             config_set_string (STATE_SECTION_GREETER, STATE_KEY_LAST_USER, username);
     }
@@ -2483,12 +2482,17 @@ set_displayed_user (LightDMGreeter *ldm, const gchar *username)
 
     if (g_strcmp0 (username, "*other") == 0)
     {
+        gtk_entry_set_text (username_entry, "");
         gtk_widget_show (GTK_WIDGET (username_entry));
         gtk_widget_show (GTK_WIDGET (cancel_button));
         user_tooltip = g_strdup (_("Other"));
     }
     else
     {
+        /* A remembered identity is a separate profile, never a pre-filled
+         * manual login. Keep its name in the label and ask only for PAM's
+         * secret prompt. */
+        gtk_entry_set_text (username_entry, "");
         gtk_widget_hide (GTK_WIDGET (username_entry));
         gtk_widget_hide (GTK_WIDGET (cancel_button));
         user_tooltip = g_strdup (username);
@@ -2541,7 +2545,7 @@ other_user_clicked_cb (GtkButton *button, gpointer user_data)
     /* Clear credentials before switching, including a previous manual name. */
     gtk_entry_set_text (username_entry, "");
     gtk_entry_set_text (password_entry, "");
-    if (!lightdm_greeter_get_hide_users_hint (greeter) && get_user_iter ("*other", &iter))
+    if (get_user_iter ("*other", &iter))
     {
         /* The changed signal does not fire if Other is already active. */
         if (gtk_combo_box_get_active (user_combo) != -1)
@@ -2878,6 +2882,7 @@ load_user_list (void)
 
     const gchar  *selected_user;
     gchar        *last_user;
+    gboolean      hide_users;
     gboolean      show_user_list;
 
     model = gtk_combo_box_get_model (user_combo);
@@ -2886,7 +2891,13 @@ load_user_list (void)
     if (last_user && (!last_user[0] || last_user[0] == '*'))
         g_clear_pointer (&last_user, g_free);
 
-    if (lightdm_greeter_get_select_user_hint (greeter))
+    hide_users = lightdm_greeter_get_hide_users_hint (greeter);
+    if (hide_users && lightdm_greeter_get_lock_hint (greeter) &&
+        lightdm_greeter_get_select_user_hint (greeter))
+        selected_user = lightdm_greeter_get_select_user_hint (greeter);
+    else if (hide_users)
+        selected_user = last_user;
+    else if (lightdm_greeter_get_select_user_hint (greeter))
         selected_user = lightdm_greeter_get_select_user_hint (greeter);
     else if (lightdm_greeter_get_select_guest_hint (greeter))
         selected_user = "*guest";
@@ -2895,7 +2906,10 @@ load_user_list (void)
     else
         selected_user = NULL;
 
-    show_user_list = config_get_bool (NULL, CONFIG_KEY_SHOW_USER_LIST, FALSE);
+    /* hide-users still blocks AccountsService enumeration. A successful
+     * identity explicitly remembered by this greeter remains available as
+     * the sole password-only profile. */
+    show_user_list = !hide_users && config_get_bool (NULL, CONFIG_KEY_SHOW_USER_LIST, FALSE);
     if (show_user_list)
     {
         g_signal_connect (lightdm_user_list_get_instance (), "user-added", G_CALLBACK (user_added_cb), greeter);
@@ -3533,15 +3547,8 @@ main (int argc, char **argv)
 
     greeter_background_connect (greeter_background, gdk_screen_get_default ());
 
-    if (lightdm_greeter_get_hide_users_hint (greeter))
-    {
-        set_displayed_user (greeter, "*other");
-    }
-    else
-    {
-        load_user_list ();
-        gtk_widget_show (GTK_WIDGET (user_combo));
-    }
+    load_user_list ();
+    gtk_widget_show (GTK_WIDGET (user_combo));
 
     /* Windows positions */
     value = config_get_string (NULL, CONFIG_KEY_POSITION, NULL);
